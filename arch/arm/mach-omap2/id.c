@@ -22,7 +22,9 @@
 #include <asm/cputype.h>
 
 #include "common.h"
+#include "iomap.h"
 #include <plat/cpu.h>
+#include <plat/omap44xx.h>
 
 #include <mach/id.h>
 
@@ -318,10 +320,10 @@ void __init omap4xxx_check_features(void)
 
 		si_type = (read_tap_reg(OMAP4_CTRL_MODULE_CORE_STD_FUSE_PROD_ID_1) >> 16) & 3;
 #ifdef CONFIG_FORCE_SILICON_PERFORMANCE
-		si_type = OMAP4_SILICON_TYPE_PERFORMANCE;
+		si_type = 2;
 #endif
 		switch (si_type) {
-		case OMAP4_SILICON_TYPE_PERFORMANCE:
+		case 2:
 			/* High performance device */
 			omap_features |= OMAP4_HAS_MPU_1_2GHZ;
 			break;
@@ -331,9 +333,7 @@ void __init omap4xxx_check_features(void)
 	if (cpu_is_omap446x()) {
 		si_type =
 			read_tap_reg(OMAP4_CTRL_MODULE_CORE_STD_FUSE_PROD_ID_1);
-#ifdef CONFIG_FORCE_SILICON_PERFORMANCE
-		si_type = OMAP4_SILICON_TYPE_PERFORMANCE;
-#endif
+
 		switch ((si_type & (3 << 16)) >> 16) {
 		case 2:
 			/* High performance device */
