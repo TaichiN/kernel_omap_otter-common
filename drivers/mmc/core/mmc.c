@@ -28,7 +28,10 @@
 #include "mmc_ops.h"
 #include "sd_ops.h"
 
+#ifdef CONFIG_MACH_OMAP_4430_KC1
 #define EMMC		1
+#endif
+
 static int RW_OFFSET;
 static int RW_SHIFT;
 
