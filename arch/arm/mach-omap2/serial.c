@@ -198,8 +198,11 @@ static inline int __init omap_serial_fill_default_pads(
 {
 	return 0;
 }
-static void __init omap_serial_check_wakeup(struct omap_board_data *bdata
-					    struct omap_uart_state *uart) {}
+static inline void __init omap_serial_check_wakeup(
+					struct omap_board_data *bdata,
+					struct omap_uart_state *uart)
+{
+}
 #endif
 
 static char *cmdline_find_option(char *str)
