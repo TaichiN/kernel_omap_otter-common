@@ -1064,7 +1064,9 @@ static u32 dsi_get_errors(struct platform_device *dsidev)
 int dsi_runtime_get(struct platform_device *dsidev)
 {
 	int r;
-	struct dsi_data *dsi = dsi_get_dsidrv_data(dsidev);
+	struct dsi_data *dsi;
+	if (!dsidev) return -1;
+	dsi = dsi_get_dsidrv_data(dsidev);
 
 	DSSDBG("dsi_runtime_get\n");
 
@@ -1620,6 +1622,10 @@ int dsi_pll_set_clock_div(struct platform_device *dsidev,
 	l = FLD_MOD(l, 0, 19, 19);	/* DSI_PROTO_CLOCK_PWDN */
 	l = FLD_MOD(l, 0, 20, 20);	/* DSI_HSDIVBYPASS */
 	dsi_write_reg(dsidev, DSI_PLL_CONFIGURATION2, l);
+
+	/* FIXME-HASH: WATCH THIS */
+	// need to enable pll & hsdivider power on here to enable pll output
+	dsi_pll_power(dsidev, DSI_PLL_POWER_ON_ALL);
 
 	DSSDBG("PLL config done\n");
 err:
@@ -4860,18 +4866,30 @@ EXPORT_SYMBOL(omap_dsi_release_vc);
 
 void dsi_wait_pll_hsdiv_dispc_active(struct platform_device *dsidev)
 {
-	if (wait_for_bit_change(dsidev, DSI_PLL_STATUS, 7, 1) != 1)
+	int clock_id;
+	if (wait_for_bit_change(dsidev, DSI_PLL_STATUS, 7, 1) != 1) {
+		if (dsi_get_dsidev_id(dsidev) == 0)
+			clock_id = OMAP_DSS_CLK_SRC_DSI_PLL_HSDIV_DISPC;
+		else
+			clock_id = OMAP_DSS_CLK_SRC_DSI2_PLL_HSDIV_DISPC;
 		DSSERR("%s (%s) not active\n",
-			dss_get_generic_clk_source_name(OMAP_DSS_CLK_SRC_DSI_PLL_HSDIV_DISPC),
-			dss_feat_get_clk_source_name(OMAP_DSS_CLK_SRC_DSI_PLL_HSDIV_DISPC));
+			dss_get_generic_clk_source_name(clock_id),
+			dss_feat_get_clk_source_name(clock_id));
+	}
 }
 
 void dsi_wait_pll_hsdiv_dsi_active(struct platform_device *dsidev)
 {
-	if (wait_for_bit_change(dsidev, DSI_PLL_STATUS, 8, 1) != 1)
+	int clock_id;
+	if (wait_for_bit_change(dsidev, DSI_PLL_STATUS, 8, 1) != 1) {
+		if (dsi_get_dsidev_id(dsidev) == 0)
+			clock_id = OMAP_DSS_CLK_SRC_DSI_PLL_HSDIV_DSI;
+		else
+			clock_id = OMAP_DSS_CLK_SRC_DSI2_PLL_HSDIV_DSI;
 		DSSERR("%s (%s) not active\n",
-			dss_get_generic_clk_source_name(OMAP_DSS_CLK_SRC_DSI_PLL_HSDIV_DSI),
-			dss_feat_get_clk_source_name(OMAP_DSS_CLK_SRC_DSI_PLL_HSDIV_DSI));
+			dss_get_generic_clk_source_name(clock_id),
+			dss_feat_get_clk_source_name(clock_id));
+	}
 }
 
 static void dsi_calc_clock_param_ranges(struct platform_device *dsidev)
@@ -4928,10 +4946,12 @@ static void dsi_put_clocks(struct platform_device *dsidev)
 static int omap_dsihw_probe(struct platform_device *dsidev)
 {
 	u32 rev;
-	int r, i, dsi_module = dsi_get_dsidev_id(dsidev);
+	int r, i, dsi_module;
 	struct resource *dsi_mem;
 	struct dsi_data *dsi;
 
+	DSSDBG("omap_dsihw_probe %s\n", dsidev->name);
+	dsi_module = dsi_get_dsidev_id(dsidev);
 	dsi = devm_kzalloc(&dsidev->dev, sizeof(*dsi), GFP_KERNEL);
 	if (!dsi)
 		return -ENOMEM;

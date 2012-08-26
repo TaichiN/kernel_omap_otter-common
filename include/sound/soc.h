@@ -800,6 +800,12 @@ struct snd_soc_dai_link {
 	const struct device_node *cpu_dai_of_node;
 	const char *codec_dai_name;
 
+	/* supported BE */
+	const char **supported_be;
+	int num_be;
+	int fe_playback_channels;
+	int fe_capture_channels;
+
 	unsigned int dai_fmt;           /* format to set on init */
 
 	enum snd_soc_dpcm_trigger trigger[2]; /* trigger type for DPCM */
@@ -828,8 +834,17 @@ struct snd_soc_dai_link {
 	int (*be_hw_params_fixup)(struct snd_soc_pcm_runtime *rtd,
 			struct snd_pcm_hw_params *params);
 
+	/* Void Pointer struct introduced to maintain
+	* the ABE specific Port Details for OMAP4
+	*/
+	void *private_data;
+
 	/* machine stream operations */
 	struct snd_soc_ops *ops;
+
+	/* pre and post DAI link activity */
+	int (*pre)(struct snd_pcm_substream *substream);
+	void (*post)(struct snd_pcm_substream *substream);
 };
 
 struct snd_soc_codec_conf {

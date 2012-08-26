@@ -232,6 +232,7 @@ struct omap_hsmmc_host {
 	struct omap_hsmmc_next	next_data;
 
 	struct	omap_mmc_platform_data	*pdata;
+	int			shutdown;
 };
 
 static int omap_hsmmc_card_detect(struct device *dev, int slot)
@@ -1660,6 +1661,10 @@ static void omap_hsmmc_request(struct mmc_host *mmc, struct mmc_request *req)
 
 	BUG_ON(host->req_in_progress);
 	BUG_ON(host->dma_ch != -1);
+
+	if (host->shutdown)
+		return;
+
 	if (host->protect_card) {
 		if (host->reqs_blocked < 3) {
 			/*
@@ -2182,6 +2187,7 @@ static int __devinit omap_hsmmc_probe(struct platform_device *pdev)
 	}
 	host->power_mode = MMC_POWER_OFF;
 	host->flags	= AUTO_CMD12;
+	host->shutdown = 0;
 	host->next_data.cookie = 1;
 	host->regulator_enabled = 0;
 
@@ -2286,7 +2292,7 @@ static int __devinit omap_hsmmc_probe(struct platform_device *pdev)
 	mmc->max_seg_size = mmc->max_req_size;
 
 	mmc->caps |= MMC_CAP_MMC_HIGHSPEED | MMC_CAP_SD_HIGHSPEED |
-		     MMC_CAP_WAIT_WHILE_BUSY | MMC_CAP_ERASE;
+		     MMC_CAP_WAIT_WHILE_BUSY;
 
 	mmc->caps |= mmc_slot(host).caps;
 	if (mmc->caps & MMC_CAP_8_BIT_DATA)
@@ -2568,6 +2574,30 @@ static int omap_hsmmc_runtime_resume(struct device *dev)
 	return 0;
 }
 
+static void omap_hsmmc_shutdown(struct platform_device *pdev)
+{
+	struct omap_hsmmc_host *host;
+
+	host = platform_get_drvdata(pdev);
+
+#ifdef CONFIG_WL12XX_SDIO
+	/* No particular shutdown delay for WLAN - only apply this to real cards */
+	/* FIXME-HASH: HARD-CODING THE WLAN MMC (WAS: CONFIG_TIWLAN_MMC_CONTROLLER) */
+	if (pdev->id == (5-1)) {
+		return;
+	}
+#endif
+	dev_info(&pdev->dev, "shutting down mmc\n");
+	mmc_flush_scheduled_work();
+	host->shutdown = 1;
+	cancel_delayed_work(&host->mmc->detect);
+	mmc_flush_scheduled_work();
+
+	/* MMC spec gives 800ms min for card housekeeping.
+	   Leave it on the safe side */
+	msleep(1000);
+}
+
 static struct dev_pm_ops omap_hsmmc_dev_pm_ops = {
 	.suspend	= omap_hsmmc_suspend,
 	.resume		= omap_hsmmc_resume,
@@ -2578,6 +2608,7 @@ static struct dev_pm_ops omap_hsmmc_dev_pm_ops = {
 static struct platform_driver omap_hsmmc_driver = {
 	.probe		= omap_hsmmc_probe,
 	.remove		= __devexit_p(omap_hsmmc_remove),
+	.shutdown	= omap_hsmmc_shutdown,
 	.driver		= {
 		.name = DRIVER_NAME,
 		.owner = THIS_MODULE,

@@ -406,4 +406,18 @@ int abe_opp_stream_event(struct snd_soc_dapm_context *dapm, int event);
 void abe_init_debugfs(struct omap_abe *abe);
 void abe_cleanup_debugfs(struct omap_abe *abe);
 
+/* Port connection configuration structure Refer abe_type.h for enums */
+typedef struct {
+	int abe_port_id_ul;	/*Which port id to be connected for  up link */
+	int serial_id_ul;	/*Which mcbsp id is connected to above mentioned port   */
+	int sample_format_ul;	/* ABE format ? */
+	int sample_rate_ul;	/*Sample rate ? */
+	int bit_reorder_ul;	/* 1: transfer LSB first   0: transfer MSB first */
+	int abe_port_id_dl;	/*Which port id to be connected for  down link */
+	int serial_id_dl;	/*Which mcbsp id is connected to above mentioned port   */
+	int sample_format_dl;	/* ABE format ? */
+	int sample_rate_dl;	/* Sample rate ? */
+	int bit_reorder_dl;	/* 1: transfer LSB first   0: transfer MSB first */
+} t_port_config;
+
 #endif	/* End of __OMAP_MCPDM_H__ */
