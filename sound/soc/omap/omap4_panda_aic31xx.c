@@ -60,7 +60,7 @@
 #include <sound/soc.h>
 #include <sound/soc-dapm.h>
 #include <sound/jack.h>
-#include <sound/soc-dsp.h>
+//#include <sound/soc-dsp.h>
 
 #include <asm/mach-types.h>
 #include <mach/hardware.h>
@@ -68,11 +68,12 @@
 #include <plat/mcbsp.h>
 #include <plat/board.h>
 
+#include "mcbsp.h"
 #include "omap-mcbsp.h"
 #include "omap-pcm.h"
 #include "omap-abe-priv.h"
 #include "omap-dmic.h"
-#include "abe/abe_main.h"
+//#include "abe/abe_main.h"
 #include "../codecs/tlv320aic31xx.h"
 // #include "../../fm/fm34.h"
 
@@ -376,6 +377,7 @@ static int mcbsp_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 	unsigned int be_id;
 	unsigned int threshold;
 	unsigned int val, min_mask;
+	struct omap_mcbsp *mcbsp;
 	DBG("%s: CPU DAI %s BE_ID %d\n", __func__, cpu_dai->name, \
 						rtd->dai_link->be_id);
 
@@ -414,13 +416,15 @@ static int mcbsp_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 	snd_mask_set(&params->masks[SNDRV_PCM_HW_PARAM_FORMAT -
 				    SNDRV_PCM_HW_PARAM_FIRST_MASK], val);
 
-	omap_mcbsp_set_tx_threshold(cpu_dai->id, threshold);
-	omap_mcbsp_set_rx_threshold(cpu_dai->id, threshold);
+	mcbsp = snd_soc_dai_get_drvdata(cpu_dai);
+	omap_mcbsp_set_tx_threshold(mcbsp, threshold);
+	omap_mcbsp_set_rx_threshold(mcbsp, threshold);
 
 	DBG("%s: Exiting\n", __func__);
 	return 0;
 }
 
+#if 0
 struct snd_soc_dsp_link fe_media = {
 	.playback	= true,
 	.capture	= true,
@@ -444,13 +448,14 @@ static const char *mm1_be[] = {
 static const char *mm_lp_be[] = {
 		OMAP_ABE_BE_MM_EXT0_DL,
 };
+#endif
 
 /* ABE Port configuration structure introduced within the
 * DAI_LINK Structure as private_data void pointer member
 */
 t_port_config mm_ext0_config = {
 	/* uplink port configuration */
-	.abe_port_id_ul = MM_EXT_IN_PORT,
+	.abe_port_id_ul = OMAP_ABE_MM_EXT_IN_PORT,
 	.serial_id_ul = MCBSP3_RX,
 	.sample_format_ul = STEREO_RSHIFTED_16,
 #ifdef CONFIG_ABE_44100
@@ -461,7 +466,7 @@ t_port_config mm_ext0_config = {
 	.bit_reorder_ul = 0,
 
 	/* down link port configuration */
-	.abe_port_id_dl = MM_EXT_OUT_PORT,
+	.abe_port_id_dl = OMAP_ABE_MM_EXT_OUT_PORT,
 	.serial_id_dl = MCBSP3_TX,
 	.sample_format_dl = STEREO_RSHIFTED_16,
 #ifdef CONFIG_ABE_44100
@@ -486,12 +491,16 @@ static struct snd_soc_dai_link omap4_dai_abe[] = {
 		/* ABE components - MM-DL (mmap) */
 		.cpu_dai_name = "MultiMedia1 LP",
 		.platform_name = "aess",
+		.codec_dai_name = "snd-soc-dummy-dai",
+		.codec_name = "snd-soc-dummy",
 
 		/* BE is dynamic */
 		.dynamic = 1,
-		.dsp_link = &fe_lp_media,
-		.supported_be = mm_lp_be,
-		.num_be = ARRAY_SIZE(mm_lp_be),
+		//.dsp_link = &fe_lp_media,
+		//.supported_be = mm_lp_be,
+		//.num_be = ARRAY_SIZE(mm_lp_be),
+		.trigger = {SND_SOC_DPCM_TRIGGER_BESPOKE, SND_SOC_DPCM_TRIGGER_BESPOKE},
+		.no_host_mode = SND_SOC_DAI_LINK_OPT_HOST,
 	},
 	{
 		.name = "tlv320aic3110 Media",
@@ -500,12 +509,15 @@ static struct snd_soc_dai_link omap4_dai_abe[] = {
 		/* ABE components - MM-UL & MM_DL */
 		.cpu_dai_name = "MultiMedia1",
 		.platform_name = "omap-pcm-audio",
+		.codec_dai_name = "snd-soc-dummy-dai",
+		.codec_name = "snd-soc-dummy",
 
 		/* BE is dynamic */
 		.dynamic = 1,
-		.dsp_link = &fe_media,
-		.supported_be = mm1_be,
-		.num_be = ARRAY_SIZE(mm1_be),
+		//.dsp_link = &fe_media,
+		//.supported_be = mm1_be,
+		//.num_be = ARRAY_SIZE(mm1_be),
+		.trigger = {SND_SOC_DPCM_TRIGGER_BESPOKE, SND_SOC_DPCM_TRIGGER_BESPOKE},
 	},
 	{
 		.name = "tlv320aic3110 Media Capture",
@@ -514,11 +526,14 @@ static struct snd_soc_dai_link omap4_dai_abe[] = {
 		/* ABE components - MM-UL2 */
 		.cpu_dai_name = "MultiMedia2",
 		.platform_name = "omap-pcm-audio",
+		.codec_dai_name = "snd-soc-dummy-dai",
+		.codec_name = "snd-soc-dummy",
 
 		.dynamic = 1, /* BE is dynamic */
-		.dsp_link = &fe_media_capture,
-		.supported_be = mm1_be,
-		.num_be = ARRAY_SIZE(mm1_be),
+		//.dsp_link = &fe_media_capture,
+		//.supported_be = mm1_be,
+		//.num_be = ARRAY_SIZE(mm1_be),
+		.trigger = {SND_SOC_DPCM_TRIGGER_BESPOKE, SND_SOC_DPCM_TRIGGER_BESPOKE},
 	},
 
 	{
@@ -526,7 +541,7 @@ static struct snd_soc_dai_link omap4_dai_abe[] = {
 		.stream_name = "Multimedia",
 
 		/* ABE components - MCBSP3 - MM-EXT */
-		.cpu_dai_name = "omap-mcbsp-dai.2",
+		.cpu_dai_name = "omap-mcbsp.2",
 		.platform_name = "omap-pcm-audio",
 
 		/* FM */
@@ -548,7 +563,7 @@ static struct snd_soc_dai_link omap4_dai_abe[] = {
 		.stream_name = "FM Playback",
 
 		/* ABE components - MCBSP3 - MM-EXT */
-		.cpu_dai_name = "omap-mcbsp-dai.2",
+		.cpu_dai_name = "omap-mcbsp.2",
 		.platform_name = "aess",
 
 		/* FM */
@@ -569,7 +584,7 @@ static struct snd_soc_dai_link omap4_dai_abe[] = {
 		.stream_name = "FM Capture",
 
 		/* ABE components - MCBSP3 - MM-EXT */
-		.cpu_dai_name = "omap-mcbsp-dai.2",
+		.cpu_dai_name = "omap-mcbsp.2",
 		.platform_name = "aess",
 
 		/* FM */

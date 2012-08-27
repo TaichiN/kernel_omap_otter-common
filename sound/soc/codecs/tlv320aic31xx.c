@@ -71,6 +71,7 @@
 #include "tlv320aic31xx.h"
 #include <linux/clk.h>
 #include <sound/tlv.h>
+#include <plat/io.h>
 
 
 /******************************************************************************
@@ -1951,7 +1952,7 @@ static int aic31xx_probe(struct snd_soc_codec *codec)
 	DBG("##Switching the Codec to STANDBY State...\n");
 
 	size = ARRAY_SIZE(aic31xx_snd_controls);
-	ret = snd_soc_add_controls(codec, aic31xx_snd_controls,
+	ret = snd_soc_add_codec_controls(codec, aic31xx_snd_controls,
 			ARRAY_SIZE(aic31xx_snd_controls));
 
 	DBG("##snd_soc_add_controls: ARRAY SIZE : %d\n", size);
@@ -1991,13 +1992,14 @@ static int aic31xx_remove(struct snd_soc_codec *codec)
  * aic31xx_suspend
  * This function is to suspend the AIC31xx driver.
  */
-static int aic31xx_suspend(struct snd_soc_codec *codec,	pm_message_t state)
+static int aic31xx_suspend(struct snd_soc_codec *codec) //,	pm_message_t state
 {
 	int val;
+
+	struct aic31xx_priv *aic31xx;
 	DBG("%s: Entered\n", __func__);
 
-	struct aic31xx_priv *aic31xx = snd_soc_codec_get_drvdata(codec);
-
+	aic31xx = snd_soc_codec_get_drvdata(codec);
 	if (aic31xx->playback_status == 0) {
 		aic31xx_set_bias_level(codec, SND_SOC_BIAS_OFF);
 

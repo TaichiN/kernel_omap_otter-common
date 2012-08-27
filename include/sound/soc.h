@@ -800,11 +800,13 @@ struct snd_soc_dai_link {
 	const struct device_node *cpu_dai_of_node;
 	const char *codec_dai_name;
 
+#if 0
 	/* supported BE */
 	const char **supported_be;
 	int num_be;
 	int fe_playback_channels;
 	int fe_capture_channels;
+#endif
 
 	unsigned int dai_fmt;           /* format to set on init */
 
