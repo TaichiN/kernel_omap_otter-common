@@ -26,6 +26,7 @@
 #include <linux/slab.h>
 #include <linux/i2c/twl.h>
 #include <plat/led.h>
+#include <linux/module.h>
 
 #define OMAP4430_LED_DEBUG 0
 
@@ -74,7 +75,7 @@ void omap4430_orange_led_set(struct led_classdev *led_cdev,
 
 	mutex_unlock(&g_orange_led_data->pri_disp_lock);
 }
-EXPORT_SYMBOL(omap4430_orange_led_set);
+EXPORT_SYMBOL_GPL(omap4430_orange_led_set);
 
 static void omap4430_sdp_secondary_disp_store(struct led_classdev *led_cdev,
 				enum led_brightness value)
@@ -133,7 +134,7 @@ int omap4430_orange_led_set_blink(struct led_classdev *led_cdev,
 
     return 0;
 }
-EXPORT_SYMBOL(omap4430_orange_led_set_blink);
+EXPORT_SYMBOL_GPL(omap4430_orange_led_set_blink);
 
 #if OMAP4430_LED_DEBUG
 static ssize_t ld_omap4430_sdp_registers_show(struct device *dev,

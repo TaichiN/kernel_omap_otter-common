@@ -24,6 +24,7 @@
 #include <plat/dmtimer.h>
 #include <linux/slab.h>
 #include <linux/delay.h>
+#include <linux/module.h>
 
 #define MAX_GPTIMER_ID		12
 

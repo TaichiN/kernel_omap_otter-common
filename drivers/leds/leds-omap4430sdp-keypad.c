@@ -23,6 +23,7 @@
 #include <linux/leds.h>
 #include <linux/platform_device.h>
 #include <linux/slab.h>
+#include <linux/module.h>
 
 #include <linux/i2c/twl.h>
 #include <plat/led.h>
@@ -65,7 +66,7 @@ void omap4430_green_led_set(struct led_classdev *led_cdev,
 	}
 
 }
-EXPORT_SYMBOL(omap4430_green_led_set);
+EXPORT_SYMBOL_GPL(omap4430_green_led_set);
 
 static void omap4430_keypad_led_work(struct work_struct *work)
 {
@@ -130,7 +131,7 @@ int omap4430_green_led_set_blink(struct led_classdev *led_cdev,
 
     return 0;
 }
-EXPORT_SYMBOL(omap4430_green_led_set_blink);
+EXPORT_SYMBOL_GPL(omap4430_green_led_set_blink);
 
 static int omap4430_keypad_led_probe(struct platform_device *pdev)
 {
