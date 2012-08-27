@@ -72,6 +72,7 @@ typedef struct
     int     start_index;
     int     fill_count;
 }circular_buffer_t;
+
 struct summit_smb347_info {
     struct i2c_client           *client;
     struct device               *dev;
@@ -90,11 +91,12 @@ struct summit_smb347_info {
     int                         bad_battery;    	//Let the android service to do the recognize protection
     int                         pin_en;
     int                         pin_susp;
-    void __iomem                *usb_phy;
+//    void __iomem                *usb_phy;
     struct proc_dir_entry       *summit_proc_fs;
     struct power_supply	        usb;
     struct power_supply	        ac;
-    struct otg_transceiver      *xceiv;
+    //struct otg_transceiver      *xceiv;
+    struct usb_phy		*xceiv;
     //struct mutex                mutex;
     //struct work_struct	        summit_monitor_work;
     struct delayed_work         summit_monitor_work;
@@ -715,7 +717,7 @@ enum usb_charger_events
 void summit_smb347_read_id(struct summit_smb347_info *di);
 int summit_usb_notifier_call(struct notifier_block *nb, unsigned long val,void *priv);
 int summit_charge_reset( struct summit_smb347_info *di);
-void summit_set_input_current_limit(struct otg_transceiver *otg,unsigned mA);
+//void summit_set_input_current_limit(struct usb_phy *otg,unsigned mA);
 int summit_charger_reconfig( struct summit_smb347_info *di);
 int summit_check_bmd( struct summit_smb347_info *di);
 void summit_switch_mode( struct summit_smb347_info *di,int mode);

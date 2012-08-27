@@ -22,7 +22,7 @@
 #include <plat/led.h>
 #include "kc1_summit/smb347.h"
 #if defined(CONFIG_LAB126)
-#include <linux/metricslog.h>
+//#include <linux/metricslog.h>
 
 #if defined(CONFIG_EARLYSUSPEND)
 #include <linux/earlysuspend.h>
@@ -648,8 +648,8 @@ void bat_log_work_func(struct work_struct *work)
     char buf[80];
     struct bq27541_info *di = container_of(work,
                 struct bq27541_info, bat_log_work.work);
-    sprintf(buf,"%s:def:capacity=%d,current=%d,voltage=%d",__func__,di->capacity,di->current_avg,di->voltage);
-    log_to_metrics(ANDROID_LOG_INFO, "Battery", buf);
+//    sprintf(buf,"%s:def:capacity=%d,current=%d,voltage=%d",__func__,di->capacity,di->current_avg,di->voltage);
+//    log_to_metrics(ANDROID_LOG_INFO, "Battery", buf);
     if(di->state==BAT_CRITICAL_STATE)
         queue_delayed_work(bat_work_queue,&di->bat_log_work,
                             msecs_to_jiffies(60000 * 1));
@@ -1078,13 +1078,13 @@ static int bq27541_resume(struct i2c_client *client)
 		snprintf(buf, sizeof(buf), "suspend_drain:def:value=%d,elapsed=%ld:",
 			bq27541_suspend_capacity - new_value,
 			diff.tv_sec * 1000 + diff.tv_nsec / NSEC_PER_MSEC);
-		log_to_metrics(ANDROID_LOG_INFO, "drain_metrics", buf);
+//		log_to_metrics(ANDROID_LOG_INFO, "drain_metrics", buf);
 		dev_info(di->dev, "Suspend drainage: %d %% over %ld msecs\n",
 			bq27541_suspend_capacity - new_value,
 			diff.tv_sec * 1000 + diff.tv_nsec / NSEC_PER_MSEC);
 	} else {
-		log_to_metrics(ANDROID_LOG_INFO, "drain_metrics",
-			"suspend_drain:def:value=-1,elapsed=-1:");
+//		log_to_metrics(ANDROID_LOG_INFO, "drain_metrics",
+//			"suspend_drain:def:value=-1,elapsed=-1:");
 		dev_err(di->dev, "Unable to obtain suspend drainage\n");
 	}
 #endif
@@ -1521,13 +1521,13 @@ static void bq27541_late_resume(struct early_suspend *handler)
 			"screen_off_drain:def:value=%d,elapsed=%ld:",
 			bq27541_early_suspend_capacity - value,
 			diff.tv_sec * 1000 + diff.tv_nsec / NSEC_PER_MSEC);
-		log_to_metrics(ANDROID_LOG_INFO, "drain_metrics", buf);
+//		log_to_metrics(ANDROID_LOG_INFO, "drain_metrics", buf);
 		dev_info(di->dev, "Screen off drainage: %d %% over %ld msecs\n",
 			bq27541_early_suspend_capacity - value,
 			diff.tv_sec * 1000 + diff.tv_nsec / NSEC_PER_MSEC);
 	} else {
-		log_to_metrics(ANDROID_LOG_INFO, "drain_metrics",
-			"screen_off_drain:def:value=-1,elapsed=-1:");
+//		log_to_metrics(ANDROID_LOG_INFO, "drain_metrics",
+//			"screen_off_drain:def:value=-1,elapsed=-1:");
 		dev_err(di->dev, "Unable to obtain screen off drainage\n");
 	}
 

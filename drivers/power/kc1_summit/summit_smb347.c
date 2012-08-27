@@ -1284,7 +1284,7 @@ static int __devinit summit_probe(struct i2c_client *client, const struct i2c_de
     di->bat_notifier.notifier_call = summit_bat_notifier_call;
     di->irq                        = client->irq;
     di->mbid                       = 0;
-    di->xceiv                      = otg_get_transceiver();
+    di->xceiv                      = usb_get_phy(USB_PHY_TYPE_USB2);
     di->bad_battery             = 0;
     di->pin_en                  = 101;
     di->pin_susp                = 155;
@@ -1311,7 +1311,7 @@ static int __devinit summit_probe(struct i2c_client *client, const struct i2c_de
     INIT_DELAYED_WORK_DEFERRABLE(&di->summit_check_work,summit_check_work_func);
     initCBuffer(&di->events,30);
     summit_init_fsm(di);
-    status = otg_register_notifier(di->xceiv, &di->usb_notifier);
+    status = usb_register_notifier(di->xceiv, &di->usb_notifier);
     status = bq275xx_register_notifier(&di->bat_notifier);
     wake_lock_init(&di->chrg_lock, WAKE_LOCK_SUSPEND, "usb_wake_lock");
     wake_lock_init(&di->summit_lock,WAKE_LOCK_SUSPEND, "summit_wake_lock");
@@ -1403,7 +1403,7 @@ static void summit_shutdown(struct i2c_client *client)
 
 	disable_irq(di->irq);
 	free_irq(di->irq, di);
-	otg_unregister_notifier(di->xceiv, &di->usb_notifier);
+	usb_unregister_notifier(di->xceiv, &di->usb_notifier);
 	bq275xx_unregister_notifier(&di->bat_notifier);
 	cancel_delayed_work_sync(&di->summit_monitor_work);
 	cancel_delayed_work_sync(&di->summit_check_work);

@@ -560,6 +560,8 @@ static inline int twl6030_mmc_card_detect(struct device *dev, int slot)
 #define RES_MAIN_REF            28
 
 #define TOTAL_RESOURCES		28
+
+
 /*
  * Power Bus Message Format ... these can be sent individually by Linux,
  * but are usually part of downloaded scripts that are run when various
@@ -591,7 +593,6 @@ static inline int twl6030_mmc_card_detect(struct device *dev, int slot)
 struct twl4030_clock_init_data {
 	bool ck32k_lowpwr_enable;
 };
-
 struct twl6030_qcharger_platform_data{
     unsigned int interrupt_pin;
 
@@ -632,6 +633,8 @@ struct twl4030_gpio_platform_data {
 
 struct twl4030_madc_platform_data {
 	int		irq_line;
+    /* FIXME-HASH: Added for Otter from 3.0  */
+	int		features;
 };
 
 /* Boards have unique mappings of {row, col} --> keycode.
@@ -694,6 +697,8 @@ struct twl4030_power_data {
 	struct twl4030_script **scripts;
 	unsigned num;
 	struct twl4030_resconfig *resource_config;
+    /* FIXME-HASH: Added for Otter from 3.0  */
+	struct twl4030_system_config *sys_config; /*system resources*/
 #define TWL4030_RESCONFIG_UNDEF	((u8)-1)
 	bool use_poweroff;	/* Board is wired for TWL poweroff */
 };
@@ -887,5 +892,64 @@ static inline int twl4030charger_usb_en(int enable) { return 0; }
 #define TWL6025_REG_SMPS4	59
 #define TWL6025_REG_VIO		60
 
+
+
+/* INCLUDED FOR OTTER */
+/* 6030 extra resources */
+#define RES_V1V29		29
+#define RES_V1V8		30
+#define RES_V2V1		31
+#define RES_VDD3		32
+#define RES_VMEM		33
+#define RES_VANA		34
+#define RES_VUAX1		35
+#define RES_VCXIO		36
+#define RES_VPP			37
+#define RES_VRTC		38
+#define RES_REGEN2		39
+#define RES_32KCLKAO		40
+#define RES_32KCLKG		41
+#define RES_32KCLKAUDIO		42
+#define RES_BIAS		43
+#define RES_VBATMIN_HI		44
+#define RES_RC6MHZ		45
+#define RES_TEMP		46
+
+/* 6032 extra resources */
+#define RES_LDOUSB		47
+#define RES_SMPS5		48
+#define RES_SMPS4		49
+#define RES_SMPS3		50
+#define RES_SMPS2		51
+#define RES_SMPS1		52
+#define RES_LDOLN		53
+#define RES_LDO7		54
+#define RES_LDO6		55
+#define RES_LDO5		56
+#define RES_LDO4		57
+#define RES_LDO3		58
+#define RES_LDO2		59
+#define RES_LDO1		60
+#define RES_VSYSMIN_HI	61
+
+struct twl4030_system_config {
+	char *name;
+	u8 group;
+};
+
+/*
+ * TWL6030 PM Master module register offsets (use TWL_MODULE_PM_MASTER)
+ */
+
+#define TWL6030_PM_MASTER_MSK_TRANSITION	0x01
+#define TWL6030_VBATMIN_HI_THRESHOLD		0x05
+
+#define TWL6032_SUBCLASS	BIT(4)  /* Phoenix Lite is a varient*/
+
+#define TWL6032_PREQ1_RES_ASS_A	0xd7
+
+#define TWL6030_MODULE_CHARGER TWL4030_MODULE_MAIN_CHARGE
+
+/* END -- INCLUDED FOR OTTER */
 
 #endif /* End of __TWL4030_H */

@@ -314,7 +314,7 @@ static ssize_t summit_fake_disconnect_store(struct device *dev, struct device_at
     int value = simple_strtoul(buf, NULL, 10);
     if(value==1){
         di->fake_disconnect=1;
-    	atomic_notifier_call_chain(&di->xceiv->notifier,USB_EVENT_NONE, di->xceiv->gadget);
+    	atomic_notifier_call_chain(&di->xceiv->notifier,USB_EVENT_NONE, di->xceiv->otg->gadget);
     }
     
     return len;
