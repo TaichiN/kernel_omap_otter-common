@@ -28,6 +28,7 @@
 #include <video/omapdss.h>
 #include <linux/gpio.h>
 #include <linux/regulator/consumer.h>
+#include <plat/io.h>
 
 /* Delay between Panel configuration and Panel enabling */
 #define LCD_RST_DELAY		100
