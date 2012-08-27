@@ -84,6 +84,7 @@ endif
 
 obj-$(CONFIG_PM_DEBUG)			+= pm-debug.o
 ifeq ($(CONFIG_PM_DEBUG),y)
+obj-$(CONFIG_ARCH_OMAP4)		+= prcm-44xx-debug.o
 obj-$(CONFIG_ARCH_OMAP5)		+= prcm-54xx-debug.o
 endif
 obj-$(CONFIG_POWER_AVS_OMAP)		+= sr_device.o
@@ -262,13 +263,10 @@ obj-$(CONFIG_MACH_IGEP0020)		+= board-igep0020.o
 obj-$(CONFIG_MACH_OMAP3_TOUCHBOOK)	+= board-omap3touchbook.o
 obj-$(CONFIG_MACH_OMAP_4430SDP)		+= board-4430sdp.o
 obj-$(CONFIG_MACH_OMAP_4430_KC1)	+= board-4430kc1-tablet.o \
-					   board-4430kc1-power.o \
 					   board-4430kc1-serial.o \
 					   board-4430kc1-tablet-panel.o \
-					   board-44xx-identity.o \
 					   hsmmc.o \
-					   omap_phy_internal.o \
-					   omap4_apps_brd_id.o
+					   omap_phy_internal.o
 obj-$(CONFIG_MACH_OMAP4_PANDA)		+= board-omap4panda.o
 
 obj-$(CONFIG_MACH_PCM049)		+= board-omap4pcm049.o
