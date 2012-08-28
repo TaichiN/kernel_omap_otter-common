@@ -34,6 +34,7 @@
 #include <linux/platform_device.h>
 #include <linux/clk.h>
 #include <linux/err.h>
+#include <linux/interrupt.h>
 #include <linux/device.h>
 #include <linux/of.h>
 #include <linux/of_irq.h>
@@ -88,7 +89,13 @@
 #define twl_has_madc()	false
 #endif
 
-#ifdef CONFIG_TWL4030_POWER
+#if defined(CONFIG_TWL6030_GPADC) || defined(CONFIG_TWL6030_GPADC_MODULE)
+#define twl_has_gpadc()	true
+#else
+#define twl_has_gpadc()	false
+#endif
+
+#if defined(CONFIG_TWL4030_POWER) || defined(CONFIG_TWL6030_POWER)
 #define twl_has_power()        true
 #else
 #define twl_has_power()        false
@@ -131,6 +138,7 @@
 
 /* Last - for index max*/
 #define TWL4030_MODULE_LAST		TWL4030_MODULE_SECURED_REG
+#define TWL6030_MODULE_LAST		TWL6030_MODULE_SLAVE_RES
 
 #define TWL_NUM_SLAVES		4
 
@@ -141,13 +149,20 @@
 #define twl_has_pwrbutton()	false
 #endif
 
+#if defined(CONFIG_INPUT_TWL6030_PWRBUTTON) \
+	|| defined(CONFIG_INPUT_TWL6030_PWRBUTTON_MODULE)
+#define twl6030_has_pwrbutton()        true
+#else
+#define twl6030_has_pwrbutton()        false
+#endif
+
 #define SUB_CHIP_ID0 0
 #define SUB_CHIP_ID1 1
 #define SUB_CHIP_ID2 2
 #define SUB_CHIP_ID3 3
 #define SUB_CHIP_ID_INVAL 0xff
 
-#define TWL_MODULE_LAST TWL4030_MODULE_LAST
+#define TWL_MODULE_LAST TWL6030_MODULE_LAST
 
 /* Base Address defns for twl4030_map[] */
 
@@ -230,6 +245,13 @@
 #define TPS_SUBSET		BIT(1)	/* tps659[23]0 have fewer LDOs */
 #define TWL5031			BIT(2)  /* twl5031 has different registers */
 #define TWL6030_CLASS		BIT(3)	/* TWL6030 class */
+
+/* need to access USB_PRODUCT_ID_LSB to identify which 6030 varient we are */
+#define USB_PRODUCT_ID_LSB	0x02
+
+/* need to check eeprom revision and jtagver number */
+#define TWL6030_REG_EPROM_REV	0xdf
+#define TWL6030_REG_JTAGVERNUM	0x87
 
 /*----------------------------------------------------------------------*/
 
@@ -669,8 +691,8 @@ add_regulator(int num, struct regulator_init_data *pdata,
  */
 
 static int
-add_children(struct twl4030_platform_data *pdata, unsigned irq_base,
-		unsigned long features)
+add_children(struct twl4030_platform_data *pdata, unsigned long features,
+		unsigned long errata)
 {
 	struct device	*child;
 	unsigned sub_chip_id;
@@ -678,7 +700,7 @@ add_children(struct twl4030_platform_data *pdata, unsigned irq_base,
 	if (twl_has_gpio() && pdata->gpio) {
 		child = add_child(SUB_CHIP_ID1, "twl4030_gpio",
 				pdata->gpio, sizeof(*pdata->gpio),
-				false, irq_base + GPIO_INTR_OFFSET, 0);
+				false, pdata->irq_base + GPIO_INTR_OFFSET, 0);
 		if (IS_ERR(child))
 			return PTR_ERR(child);
 	}
@@ -686,7 +708,7 @@ add_children(struct twl4030_platform_data *pdata, unsigned irq_base,
 	if (twl_has_keypad() && pdata->keypad) {
 		child = add_child(SUB_CHIP_ID2, "twl4030_keypad",
 				pdata->keypad, sizeof(*pdata->keypad),
-				true, irq_base + KEYPAD_INTR_OFFSET, 0);
+				true, pdata->irq_base + KEYPAD_INTR_OFFSET, 0);
 		if (IS_ERR(child))
 			return PTR_ERR(child);
 	}
@@ -694,7 +716,17 @@ add_children(struct twl4030_platform_data *pdata, unsigned irq_base,
 	if (twl_has_madc() && pdata->madc) {
 		child = add_child(2, "twl4030_madc",
 				pdata->madc, sizeof(*pdata->madc),
-				true, irq_base + MADC_INTR_OFFSET, 0);
+				true, pdata->irq_base + MADC_INTR_OFFSET, 0);
+		if (IS_ERR(child))
+			return PTR_ERR(child);
+	}
+
+	if (twl_has_gpadc() && pdata->madc) {
+		pdata->madc->features = features;
+		child = add_child(1, "twl6030_gpadc",
+				pdata->madc, sizeof(*pdata->madc),
+				true, pdata->irq_base + MADC_INTR_OFFSET,
+				pdata->irq_base + GPADCSW_INTR_OFFSET);
 		if (IS_ERR(child))
 			return PTR_ERR(child);
 	}
@@ -710,7 +742,7 @@ add_children(struct twl4030_platform_data *pdata, unsigned irq_base,
 		sub_chip_id = twl_map[TWL_MODULE_RTC].sid;
 		child = add_child(sub_chip_id, "twl_rtc",
 				NULL, 0,
-				true, irq_base + RTC_INTR_OFFSET, 0);
+				true, pdata->irq_base + RTC_INTR_OFFSET, 0);
 		if (IS_ERR(child))
 			return PTR_ERR(child);
 	}
@@ -763,8 +795,8 @@ add_children(struct twl4030_platform_data *pdata, unsigned irq_base,
 				pdata->usb, sizeof(*pdata->usb),
 				true,
 				/* irq0 = USB_PRES, irq1 = USB */
-				irq_base + USB_PRES_INTR_OFFSET,
-				irq_base + USB_INTR_OFFSET);
+				pdata->irq_base + USB_PRES_INTR_OFFSET,
+				pdata->irq_base + USB_INTR_OFFSET);
 
 		if (IS_ERR(child))
 			return PTR_ERR(child);
@@ -812,8 +844,8 @@ add_children(struct twl4030_platform_data *pdata, unsigned irq_base,
 			pdata->usb, sizeof(*pdata->usb),
 			true,
 			/* irq1 = VBUS_PRES, irq0 = USB ID */
-			irq_base + USBOTG_INTR_OFFSET,
-			irq_base + USB_PRES_INTR_OFFSET);
+			pdata->irq_base + USBOTG_INTR_OFFSET,
+			pdata->irq_base + USB_PRES_INTR_OFFSET);
 
 		if (IS_ERR(child))
 			return PTR_ERR(child);
@@ -840,7 +872,14 @@ add_children(struct twl4030_platform_data *pdata, unsigned irq_base,
 
 	if (twl_has_pwrbutton() && twl_class_is_4030()) {
 		child = add_child(1, "twl4030_pwrbutton",
-				NULL, 0, true, irq_base + 8 + 0, 0);
+				NULL, 0, true, pdata->irq_base + 8 + 0, 0);
+		if (IS_ERR(child))
+			return PTR_ERR(child);
+	}
+
+	if (twl6030_has_pwrbutton()) {
+		child = add_child(1, "twl6030_pwrbutton",
+				NULL, 0, true, pdata->irq_base, 0);
 		if (IS_ERR(child))
 			return PTR_ERR(child);
 	}
@@ -1090,8 +1129,8 @@ add_children(struct twl4030_platform_data *pdata, unsigned irq_base,
 		child = add_child(3, "twl4030_bci",
 				pdata->bci, sizeof(*pdata->bci), false,
 				/* irq0 = CHG_PRES, irq1 = BCI */
-				irq_base + BCI_PRES_INTR_OFFSET,
-				irq_base + BCI_INTR_OFFSET);
+				pdata->irq_base + BCI_PRES_INTR_OFFSET,
+				pdata->irq_base + BCI_INTR_OFFSET);
 		if (IS_ERR(child))
 			return PTR_ERR(child);
 	}
@@ -1191,6 +1230,20 @@ static void clocks_init(struct device *dev,
 
 /*----------------------------------------------------------------------*/
 
+#ifdef CONFIG_PM
+static int twl_suspend(struct i2c_client *client, pm_message_t mesg)
+{
+	return irq_set_irq_wake(client->irq, 1);
+}
+
+static int twl_resume(struct i2c_client *client)
+{
+	return irq_set_irq_wake(client->irq, 0);
+}
+#else
+#define twl_suspend	NULL
+#define twl_resume	NULL
+#endif
 
 static int twl_remove(struct i2c_client *client)
 {
@@ -1225,9 +1278,13 @@ twl_probe(struct i2c_client *client, const struct i2c_device_id *id)
 {
 	struct twl4030_platform_data	*pdata = client->dev.platform_data;
 	struct device_node		*node = client->dev.of_node;
-	int				irq_base = 0;
+//	int				irq_base = 0;
 	int				status;
 	unsigned			i, num_slaves;
+	u8 temp;
+    int ret = 0, features;
+    unsigned long errata = 0;
+	u8 twlrev;
 
 	if (node && !pdata) {
 		/*
@@ -1292,27 +1349,52 @@ twl_probe(struct i2c_client *client, const struct i2c_device_id *id)
 
 	/* read TWL IDCODE Register */
 	if (twl_id == TWL4030_CLASS_ID) {
-		status = twl_read_idcode_register();
-		WARN(status < 0, "Error: reading twl_idcode register value\n");
+		ret = twl_read_idcode_register();
+		WARN(ret < 0, "Error: reading twl_idcode register value\n");
+	}
+
+	features = id->driver_data;
+	if (twl_class_is_6030()) {
+		twl_i2c_read_u8(TWL_MODULE_USB, &temp, USB_PRODUCT_ID_LSB);
+		if (temp == 0x32)
+			features |= TWL6032_SUBCLASS;
+
+		twl_i2c_read_u8(TWL6030_MODULE_ID2, &twlrev,
+				TWL6030_REG_JTAGVERNUM);
+
+		/*
+		 * Check for the errata implementation
+		 * Errata ProDB00119490 present only in the TWL6032 ES1.1
+		 */
+		if (features & TWL6032_SUBCLASS) {
+			if (twlrev == 1)
+				errata |= TWL6032_ERRATA_DB00119490;
+		}
 	}
 
 	/* load power event scripts */
-	if (twl_has_power() && pdata->power)
-		twl4030_power_init(pdata->power);
+	if (twl_has_power()) {
+		if (twl_class_is_4030() && pdata->power)
+			twl4030_power_init(pdata->power);
+		if (twl_class_is_6030())
+			twl6030_power_init(pdata->power, features);
+	}
 
 	/* Maybe init the T2 Interrupt subsystem */
-	if (client->irq) {
+	if (client->irq
+			&& pdata->irq_base
+			&& pdata->irq_end > pdata->irq_base) {
 		if (twl_class_is_4030()) {
 			twl4030_init_chip_irq(id->name);
-			irq_base = twl4030_init_irq(&client->dev, client->irq);
+			status = twl4030_init_irq(client->irq, pdata->irq_base,
+			pdata->irq_end);
 		} else {
-			irq_base = twl6030_init_irq(&client->dev, client->irq);
+			status = twl6030_init_irq(client->irq, pdata->irq_base,
+			pdata->irq_end, features);
 		}
 
-		if (irq_base < 0) {
-			status = irq_base;
+		if (status < 0)
 			goto fail;
-		}
 	}
 
 	/*
@@ -1320,9 +1402,9 @@ twl_probe(struct i2c_client *client, const struct i2c_device_id *id)
 	 * Program I2C_SCL_CTRL_PU(bit 0)=0, I2C_SDA_CTRL_PU (bit 2)=0,
 	 * SR_I2C_SCL_CTRL_PU(bit 4)=0 and SR_I2C_SDA_CTRL_PU(bit 6)=0.
 	 */
+
 	if (twl_class_is_4030()) {
 		u8 temp;
-
 		twl_i2c_read_u8(TWL4030_MODULE_INTBR, &temp, REG_GPPUPDCTR1);
 		temp &= ~(SR_I2C_SDA_CTRL_PU | SR_I2C_SCL_CTRL_PU | \
 			I2C_SDA_CTRL_PU | I2C_SCL_CTRL_PU);
@@ -1333,7 +1415,7 @@ twl_probe(struct i2c_client *client, const struct i2c_device_id *id)
 	if (node)
 		status = of_platform_populate(node, NULL, NULL, &client->dev);
 	if (status)
-		status = add_children(pdata, irq_base, id->driver_data);
+		status = add_children(pdata, features, errata);
 
 fail:
 	if (status < 0)
@@ -1363,6 +1445,8 @@ static struct i2c_driver twl_driver = {
 	.id_table	= twl_ids,
 	.probe		= twl_probe,
 	.remove		= twl_remove,
+	.suspend	= twl_suspend,
+	.resume		= twl_resume,
 };
 
 static int __init twl_init(void)
