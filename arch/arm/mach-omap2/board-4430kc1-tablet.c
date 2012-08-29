@@ -44,11 +44,12 @@
 #include <linux/platform_data/emif_plat.h>
 //#include <mach/lpddr2-elpida.h>
 //#include <mach/dmm.h>
-//#include <mach/omap4_ion.h>
+#include <mach/omap4_ion.h>
 
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
 #include <asm/mach/map.h>
+#include <asm/hardware/gic.h>
 
 #include <plat/board.h>
 #include <plat/common.h>
@@ -880,7 +881,7 @@ module_param(enable_suspend_off, bool, S_IRUGO);
 /******** END I2C BOARD INIT ********/
 
 #if defined(CONFIG_TOUCHSCREEN_ILITEK)
-static void omap_ilitek_init(void)
+static void __init omap_ilitek_init(void)
 {
 	//printk("~~~~~~~~%s\n", __func__);
 	omap_mux_init_signal("dpm_emu7.gpio_18", OMAP_PIN_OUTPUT | OMAP_PIN_OFF_NONE);
@@ -923,7 +924,7 @@ static void enable_rtc_gpio(void){
 	return;
 }
 
-static void omap4_kc1_wifi_mux_init(void)
+static void __init omap4_kc1_wifi_mux_init(void)
 {
 	omap_mux_init_gpio(GPIO_WIFI_IRQ, OMAP_PIN_INPUT |
 				OMAP_PIN_OFF_WAKEUPENABLE);
@@ -1188,6 +1189,8 @@ MACHINE_START(OMAP_4430SDP, "OMAP4430")
 //	.init_early	= omap_4430sdp_init_early,
 	.init_early	= omap4430_init_early,
 	.init_irq	= gic_init_irq,
+	.handle_irq	= gic_handle_irq,
 	.init_machine	= omap_kc1_init,
+	.restart	= omap_prcm_restart,
 	.timer		= &omap4_timer,
 MACHINE_END
