@@ -291,7 +291,7 @@ static void cpufreq_smartass_freq_change_time_work(struct work_struct *work)
         struct cpufreq_policy *policy;
         unsigned int relation = CPUFREQ_RELATION_L;
         cpumask_t tmp_mask = work_cpumask;
-        for_each_cpu(cpu, tmp_mask) {
+        for_each_cpu(cpu, &tmp_mask) {
                 this_smartass = &per_cpu(smartass_info, cpu);
                 policy = this_smartass->cur_policy;
                 cpu_load = this_smartass->cur_cpu_load;
