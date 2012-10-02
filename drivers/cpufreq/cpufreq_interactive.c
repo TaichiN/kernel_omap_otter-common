@@ -147,6 +147,11 @@ static struct cpufreq_interactive_inputopen inputopen;
  */
 
 static int boost_val;
+
+/*
+ * Immediately boost speed of all CPUs to hispeed_freq.
+ */
+
 static int boostpulse_val;
 
 static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
@@ -967,8 +972,11 @@ static ssize_t store_boostpulse(struct kobject *kobj, struct attribute *attr,
 
         boostpulse_val = val;
 
-	trace_cpufreq_interactive_boost("pulse");
-	cpufreq_interactive_boost();
+	if (boostpulse_val) {
+		trace_cpufreq_interactive_boost("pulse");
+		cpufreq_interactive_boost();
+	}
+
 	return count;
 }
 
