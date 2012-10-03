@@ -147,7 +147,6 @@ static struct cpufreq_interactive_inputopen inputopen;
  */
 
 static int boost_val;
-static int boostpulse_val;
 
 static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		unsigned int event);
@@ -949,12 +948,6 @@ static ssize_t store_boost(struct kobject *kobj, struct attribute *attr,
 
 define_one_global_rw(boost);
 
-static ssize_t show_boostpulse(struct kobject *kobj, struct attribute *attr,
-			  char *buf)
-{
-	return sprintf(buf, "%d\n", boostpulse_val);
-}
-
 static ssize_t store_boostpulse(struct kobject *kobj, struct attribute *attr,
 				const char *buf, size_t count)
 {
@@ -965,14 +958,13 @@ static ssize_t store_boostpulse(struct kobject *kobj, struct attribute *attr,
 	if (ret < 0)
 		return ret;
 
-        boostpulse_val = val;
-
 	trace_cpufreq_interactive_boost("pulse");
 	cpufreq_interactive_boost();
 	return count;
 }
 
-define_one_global_rw(boostpulse);
+static struct global_attr boostpulse =
+	__ATTR(boostpulse, 0200, NULL, store_boostpulse);
 
 static ssize_t show_sampling_periods(struct kobject *kobj,
 			struct attribute *attr, char *buf)
