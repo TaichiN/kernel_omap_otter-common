@@ -123,7 +123,7 @@ config CPU_FREQ_DEFAULT_GOV_HOTPLUG
 	  performance governor.
 
 config CPU_FREQ_DEFAULT_GOV_SAVAGEDZEN
-	bool "SavagedZen"
+	bool "savagedzen"
 	select CPU_FREQ_GOV_SAVAGEDZEN
 	help
 	  Use the CPUFreq governor 'savagedzen' as default.
