@@ -198,6 +198,7 @@ static void cpufreq_interactive_timer(unsigned long data)
 	unsigned long flags;
 
 	smp_rmb();
+	u64 now = ktime_to_us(ktime_get());
 
 	if (!pcpu->governor_enabled)
 		goto exit;
@@ -311,7 +312,14 @@ static void cpufreq_interactive_timer(unsigned long data)
 			cpu_load = pcpu->total_avg_load;
 	}
 
-	if (cpu_load >= go_hispeed_load || boost_val) {
+	if (boostpulse_boosted_time &&
+			now > boostpulse_boosted_time + boostpulse_duration) {
+		/* Disable the boostpulse. */
+		boostpulse_boosted_time = 0;
+		boostpulse_duration = 0;
+	}
+
+	if (cpu_load >= go_hispeed_load || boost_val || boostpulse_boosted_time) {
 		if (pcpu->target_freq <= pcpu->policy->min) {
 			new_freq = hispeed_freq;
 		} else {
@@ -362,7 +370,6 @@ static void cpufreq_interactive_timer(unsigned long data)
 		}
 	}
 
-	u64 now = ktime_to_us(ktime_get());
 	if (boostpulse_boosted_time) {
 		if (now <= boostpulse_boosted_time + boostpulse_duration) {
 			if (new_freq < hispeed_freq)
