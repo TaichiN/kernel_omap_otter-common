@@ -935,7 +935,7 @@ static ssize_t store_input_boost(struct kobject *kobj, struct attribute *attr,
 define_one_global_rw(input_boost);
 
 static ssize_t show_boost(struct kobject *kobj, struct attribute *attr,
-			  char *buf)
+				char *buf)
 {
 	return sprintf(buf, "%d\n", boost_val);
 }
@@ -964,6 +964,12 @@ static ssize_t store_boost(struct kobject *kobj, struct attribute *attr,
 
 define_one_global_rw(boost);
 
+static ssize_t show_boostpulse(struct kobject *kobj, struct attribute *attr,
+              char *buf)
+{
+    return sprintf(buf, "%lu\n", boostpulse_duration);
+}
+
 static ssize_t store_boostpulse(struct kobject *kobj, struct attribute *attr,
 				const char *buf, size_t count)
 {
@@ -986,7 +992,7 @@ static ssize_t store_boostpulse(struct kobject *kobj, struct attribute *attr,
 }
 
 static struct global_attr boostpulse =
-	__ATTR(boostpulse, 0200, NULL, store_boostpulse);
+	__ATTR(boostpulse, 0200, show_boostpulse, store_boostpulse);
 
 static ssize_t show_sampling_periods(struct kobject *kobj,
 			struct attribute *attr, char *buf)
