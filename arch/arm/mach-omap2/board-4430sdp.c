@@ -86,6 +86,9 @@
 
 #define OMAP4_SFH7741_SENSOR_OUTPUT_GPIO	184
 #define OMAP4_SFH7741_ENABLE_GPIO		188
+#define HDMI_GPIO_CT_CP_HPD 60 /* HPD mode enable/disable */
+#define HDMI_GPIO_LS_OE 41 /* Level shifter for HDMI */
+#define HDMI_GPIO_HPD  63 /* Hotplug detect */
 
 static const int sdp4430_keymap[] = {
 	KEY(0, 0, KEY_E),
@@ -878,12 +881,22 @@ static void sdp4430_hdmi_mux_init(void)
 	/* PAD0_HDMI_DDC_SCL_PAD1_HDMI_DDC_SDA */
 	omap_mux_init_signal("hdmi_ddc_scl.hdmi_ddc_scl",
 			OMAP_PIN_INPUT_PULLUP);
+	omap_mux_init_signal("hdmi_cec",
+			OMAP_PIN_INPUT_PULLUP);
+	omap_mux_init_signal("hdmi_ddc_scl",
+			OMAP_PIN_INPUT_PULLUP);
 	omap_mux_init_signal("hdmi_ddc_sda.hdmi_ddc_sda",
 			OMAP_PIN_INPUT_PULLUP);
 
 	/* strong pullup on DDC lines using unpublished register */
 	r = ((1 << 24) | (1 << 28)) ;
 	omap4_ctrl_pad_writel(r, OMAP4_CTRL_MODULE_PAD_CORE_CONTROL_I2C_1);
+
+static struct gpio sdp4430_hdmi_gpios[] = {
+	{ HDMI_GPIO_CT_CP_HPD, GPIOF_OUT_INIT_HIGH, "hdmi_gpio_ct_cp_hpd" },
+	{ HDMI_GPIO_LS_OE,	GPIOF_OUT_INIT_HIGH,	"hdmi_gpio_ls_oe" },
+	{ HDMI_GPIO_HPD, GPIOF_DIR_IN, "hdmi_gpio_hpd" },
+};
 
 	gpio_request(HDMI_GPIO_HPD, NULL);
 	omap_mux_init_gpio(HDMI_GPIO_HPD, OMAP_PIN_INPUT | OMAP_PULL_ENA);
@@ -894,8 +907,6 @@ static void sdp4430_hdmi_mux_init(void)
 	if (status)
 		pr_err("%s:Cannot request HDMI GPIOs %x \n", __func__, status);
 }
-
-
 
 static struct nokia_dsi_panel_data dsi1_panel = {
 		.name		= "taal",
@@ -965,6 +976,15 @@ static struct omap_dss_device sdp4430_lcd_device = {
 	.skip_init = false,
 };
 
+static void sdp4430_panel_disable_hdmi(struct omap_dss_device *dssdev)
+{
+	gpio_free_array(sdp4430_hdmi_gpios, ARRAY_SIZE(sdp4430_hdmi_gpios));
+}
+
+static struct omap_dss_hdmi_data sdp4430_hdmi_data = {
+	.hpd_gpio = HDMI_GPIO_HPD,
+};
+
 static struct omap_dss_device sdp4430_hdmi_device = {
 	.name = "hdmi",
 	.driver_name = "hdmi_panel",
@@ -979,7 +999,10 @@ static struct omap_dss_device sdp4430_hdmi_device = {
 		},
 	},
 	.hpd_gpio = HDMI_GPIO_HPD,
+	.platform_enable = sdp4430_panel_enable_hdmi,
+	.platform_disable = sdp4430_panel_disable_hdmi,
 	.channel = OMAP_DSS_CHANNEL_DIGIT,
+	.data = &sdp4430_hdmi_data,
 };
 
 static struct omap_dss_device *sdp4430_dss_devices[] = {

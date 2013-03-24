@@ -659,24 +659,18 @@ static struct gpio panda_hdmi_gpios[] = {
 
 static void omap4_panda_hdmi_mux_init(void)
 {
-	u32 r;
-	int status;
-	/* PAD0_HDMI_HPD_PAD1_HDMI_CEC */
-	omap_mux_init_signal("hdmi_hpd.hdmi_hpd",
-				OMAP_PIN_INPUT_PULLUP);
-	omap_mux_init_signal("gpmc_wait2.gpio_100",
-			OMAP_PIN_INPUT_PULLDOWN);
-	omap_mux_init_signal("hdmi_cec.hdmi_cec",
+	omap_mux_init_signal("hdmi_cec",
 			OMAP_PIN_INPUT_PULLUP);
-	/* PAD0_HDMI_DDC_SCL_PAD1_HDMI_DDC_SDA */
-	omap_mux_init_signal("hdmi_ddc_scl.hdmi_ddc_scl",
+	omap_mux_init_signal("hdmi_ddc_scl",
 			OMAP_PIN_INPUT_PULLUP);
 	omap_mux_init_signal("hdmi_ddc_sda.hdmi_ddc_sda",
 			OMAP_PIN_INPUT_PULLUP);
 
-	/* strong pullup on DDC lines using unpublished register */
-	r = ((1 << 24) | (1 << 28)) ;
-	omap4_ctrl_pad_writel(r, OMAP4_CTRL_MODULE_PAD_CORE_CONTROL_I2C_1);
+static struct gpio panda_hdmi_gpios[] = {
+	{ HDMI_GPIO_CT_CP_HPD, GPIOF_OUT_INIT_HIGH, "hdmi_gpio_ct_cp_hpd" },
+	{ HDMI_GPIO_LS_OE,	GPIOF_OUT_INIT_HIGH, "hdmi_gpio_ls_oe" },
+	{ HDMI_GPIO_HPD, GPIOF_DIR_IN, "hdmi_gpio_hpd" },
+};
 
 	gpio_request(HDMI_GPIO_HPD, NULL);
 	omap_mux_init_gpio(HDMI_GPIO_HPD, OMAP_PIN_INPUT | OMAP_PULL_ENA);
@@ -686,7 +680,18 @@ static void omap4_panda_hdmi_mux_init(void)
 			ARRAY_SIZE(panda_hdmi_gpios));
 	if (status)
 		pr_err("%s: Cannot request HDMI GPIOs %x \n", __func__, status);
+
+	return status;
 }
+
+static void omap4_panda_panel_disable_hdmi(struct omap_dss_device *dssdev)
+{
+	gpio_free_array(panda_hdmi_gpios, ARRAY_SIZE(panda_hdmi_gpios));
+}
+
+static struct omap_dss_hdmi_data omap4_panda_hdmi_data = {
+	.hpd_gpio = HDMI_GPIO_HPD,
+};
 
 static struct omap_dss_device  omap4_panda_hdmi_device = {
 	.name = "hdmi",
@@ -703,6 +708,7 @@ static struct omap_dss_device  omap4_panda_hdmi_device = {
 	},
 	.hpd_gpio = HDMI_GPIO_HPD,
 	.channel = OMAP_DSS_CHANNEL_DIGIT,
+	.data = &omap4_panda_hdmi_data,
 };
 
 static struct omap_dss_device *omap4_panda_dss_devices[] = {
@@ -743,6 +749,10 @@ void omap4_panda_display_init(void)
 
 	omap4_panda_hdmi_mux_init();
 	omap_display_init(&omap4_panda_dss_data);
+
+	omap_mux_init_gpio(HDMI_GPIO_LS_OE, OMAP_PIN_OUTPUT);
+	omap_mux_init_gpio(HDMI_GPIO_CT_CP_HPD, OMAP_PIN_OUTPUT);
+	omap_mux_init_gpio(HDMI_GPIO_HPD, OMAP_PIN_INPUT_PULLDOWN);
 }
 
 
