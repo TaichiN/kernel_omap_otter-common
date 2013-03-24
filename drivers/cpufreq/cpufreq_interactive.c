@@ -439,63 +439,6 @@ exit:
 	return;
 }
 
-static void cpufreq_interactive_tune(struct work_struct *work)
-{
-	unsigned int cpu;
-	cpumask_t tmp_mask;
-	unsigned long flags;
-	struct cpufreq_interactive_cpuinfo *pcpu;
-
-	unsigned int max_total_avg_load = 0;
-	unsigned int index;
-
-	spin_lock_irqsave(&tune_cpumask_lock, flags);
-	tmp_mask = tune_cpumask;
-	cpumask_clear(&tune_cpumask);
-	spin_unlock_irqrestore(&tune_cpumask_lock, flags);
-
-	for_each_cpu(cpu, &tmp_mask) {
-		unsigned int j;
-
-		pcpu = &per_cpu(cpuinfo, cpu);
-		smp_rmb();
-
-		if (!pcpu->governor_enabled)
-			continue;
-
-		mutex_lock(&set_speed_lock);
-
-		for_each_cpu(j, pcpu->policy->cpus) {
-			struct cpufreq_interactive_cpuinfo *pjcpu =
-					&per_cpu(cpuinfo, j);
-
-			if (pjcpu->total_avg_load > max_total_avg_load)
-				max_total_avg_load = pjcpu->total_avg_load;
-		}
-
-		if ((max_total_avg_load > hi_perf_threshold)
-				&& (cur_tune_value != HIGH_PERF_TUNE)) {
-				cur_tune_value = HIGH_PERF_TUNE;
-				go_hispeed_load = MIN_GO_HISPEED_LOAD;
-				min_sample_time = MAX_MIN_SAMPLE_TIME;
-				hispeed_freq = pcpu->policy->max;
-		} else if ((max_total_avg_load < low_power_threshold)
-				&& (cur_tune_value != LOW_POWER_TUNE)) {
-			/* Boost down the performance */
-				go_hispeed_load = DEFAULT_GO_HISPEED_LOAD;
-				min_sample_time = DEFAULT_MIN_SAMPLE_TIME;
-				cpufreq_frequency_table_target(pcpu->policy,
-					pcpu->freq_table, pcpu->policy->min,
-					CPUFREQ_RELATION_H, &index);
-				hispeed_freq =
-					pcpu->freq_table[index+1].frequency;
-				cur_tune_value = LOW_POWER_TUNE;
-		}
-		mutex_unlock(&set_speed_lock);
-	}
-
-}
-
 static void cpufreq_interactive_idle_start(void)
 {
 	struct cpufreq_interactive_cpuinfo *pcpu =
