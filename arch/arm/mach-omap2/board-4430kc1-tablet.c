@@ -38,6 +38,8 @@
 #include <linux/bootmem.h>
 #include <plat/omap-serial.h>
 #include <linux/memblock.h>
+#include <linux/input/bma250.h>
+
 #include <mach/hardware.h>
 #include <mach/omap4-common.h>
 #include <mach/emif.h>
@@ -317,6 +319,20 @@ static int __init omap4_twl6030_hsmmc_init(struct omap2_hsmmc_info *controllers)
 }
 
 /***** I2C BOARD INIT ****/
+static struct bma250_platform_data bma250_pdata = {
+	.regulator_name = "g-sensor-pwr",
+	.min_voltage	= 1800000,
+	.max_voltage	= 1800000,
+	.range		= BMA250_RANGE_2G,
+	.shift_adj	= BMA250_SHIFT_RANGE_2G,
+	.report_threshold = 5,
+	.poll_interval	= 50,
+	.max_interval	= 200,
+	.min_interval	= 32,
+	.axis_map_x	= 0,
+	.axis_map_y	= 1,
+	.axis_map_z	= 2,
+};
 
 static struct i2c_board_info __initdata sdp4430_i2c_boardinfo_dvt[] = {
 #ifdef CONFIG_BATTERY_BQ27541_Q
@@ -360,29 +376,27 @@ static struct i2c_board_info __initdata sdp4430_i2c_3_boardinfo[] = {
 };
 
 static struct i2c_board_info __initdata sdp4430_i2c_4_boardinfo[] = {
-/* Added for STK ALS*/
-	{ I2C_BOARD_INFO("stk_als22x7_addr1", 0x20>>1), },
-	{ I2C_BOARD_INFO("stk_als22x7_addr2", 0x22>>1), },
-	{ I2C_BOARD_INFO("stk_als22x7_addr3", 0x70>>1), },
-//add for Temp-sensor
+#ifdef CONFIG_INPUT_STK_ALS22x7
+	{ I2C_BOARD_INFO("stk_als22x7", 0x10), },
+#endif
 #ifdef CONFIG_SENSORS_LM75
 	{ I2C_BOARD_INFO("tmp105", 0x49), },
 #endif
-// for gsensor	
-	{ I2C_BOARD_INFO("bma250", 0x18), },
+#ifdef CONFIG_INPUT_BMA250
+	{ I2C_BOARD_INFO("bma250", 0x18), .platform_data = &bma250_pdata, },
+#endif
 };
 
 static struct i2c_board_info __initdata sdp4430_i2c_4_boardinfo_c1c[] = {
-/* Added for STK ALS*/
-	{ I2C_BOARD_INFO("stk_als22x7_addr1", 0x20>>1), },
-	{ I2C_BOARD_INFO("stk_als22x7_addr2", 0x22>>1), },
-	{ I2C_BOARD_INFO("stk_als22x7_addr3", 0x70>>1), },
-//add for Temp-sensor
+#ifdef CONFIG_INPUT_STK_ALS22x7
+	{ I2C_BOARD_INFO("stk_als22x7", 0x10), },
+#endif
 #ifdef CONFIG_SENSORS_LM75
 	{ I2C_BOARD_INFO("lm75", 0x48), },
 #endif
-// for gsensor	
-	{ I2C_BOARD_INFO("bma250", 0x18), },
+#ifdef CONFIG_INPUT_BMA250
+	{ I2C_BOARD_INFO("bma250", 0x18), .platform_data = &bma250_pdata, },
+#endif
 };
 
 static struct i2c_board_info __initdata sdp4430_i2c_4_boardinfo_dvt[] = {
@@ -392,17 +406,16 @@ static struct i2c_board_info __initdata sdp4430_i2c_4_boardinfo_dvt[] = {
 #else
 	{ I2C_BOARD_INFO("summit_smb347", 0x6), .irq = OMAP_GPIO_IRQ(OMAP4_CHARGER_IRQ), },
 #endif
-#endif    
-/* Added for STK ALS*/
-	{ I2C_BOARD_INFO("stk_als22x7_addr1", 0x20>>1), },
-	{ I2C_BOARD_INFO("stk_als22x7_addr2", 0x22>>1), },
-	{ I2C_BOARD_INFO("stk_als22x7_addr3", 0x70>>1), },
-//add for Temp-sensor
+#endif
+#ifdef CONFIG_INPUT_STK_ALS22x7
+	{ I2C_BOARD_INFO("stk_als22x7", 0x10), },
+#endif
 #ifdef CONFIG_SENSORS_LM75
 	{ I2C_BOARD_INFO("tmp105", 0x49), },
 #endif
-// for gsensor	
-	{ I2C_BOARD_INFO("bma250", 0x18), },
+#ifdef CONFIG_INPUT_BMA250
+	{ I2C_BOARD_INFO("bma250", 0x18), .platform_data = &bma250_pdata, },
+#endif
 };
 
 static struct i2c_board_info __initdata sdp4430_i2c_4_boardinfo_pvt[] = {
@@ -412,14 +425,13 @@ static struct i2c_board_info __initdata sdp4430_i2c_4_boardinfo_pvt[] = {
 #else
 	{ I2C_BOARD_INFO("summit_smb347", 0x6), .irq = OMAP_GPIO_IRQ(OMAP4_CHARGER_IRQ), },
 #endif
-#endif    
-/* Added for STK ALS*/
-	{ I2C_BOARD_INFO("stk_als22x7_addr1", 0x20>>1), },
-	{ I2C_BOARD_INFO("stk_als22x7_addr2", 0x22>>1), },
-	{ I2C_BOARD_INFO("stk_als22x7_addr3", 0x70>>1), },
-// for gsensor	
-	{ I2C_BOARD_INFO("bma250", 0x18), },
-//add for Temp-sensor
+#endif
+#ifdef CONFIG_INPUT_STK_ALS22x7
+	{ I2C_BOARD_INFO("stk_als22x7", 0x10), },
+#endif
+#ifdef CONFIG_INPUT_BMA250
+	{ I2C_BOARD_INFO("bma250", 0x18), .platform_data = &bma250_pdata, },
+#endif
 #ifdef CONFIG_SENSORS_LM75
 	{ I2C_BOARD_INFO("tmp105", 0x48), },
 #endif
